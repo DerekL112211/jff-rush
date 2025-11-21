@@ -25,6 +25,11 @@ export class GameController {
         this.addEventListeners();
         this.decreaseTimer();
         this.animate();
+        
+        // Add restart button listener
+        document.querySelector('#restart-button').addEventListener('click', () => {
+            this.restart();
+        });
     }
 
     init() {
@@ -130,6 +135,34 @@ export class GameController {
         }
     }
 
+    restart() {
+        // Reset game state
+        this.gameOver = false;
+        this.timer = 60;
+        clearTimeout(this.timerId);
+        
+        // Hide result display
+        this.view.hideResult();
+        
+        // Reinitialize players
+        this.init();
+        
+        // Reset keys
+        this.keys = {
+            a: { pressed: false },
+            d: { pressed: false },
+            ArrowRight: { pressed: false },
+            ArrowLeft: { pressed: false }
+        };
+        
+        // Reset health display
+        this.view.updateHealth(100, 100);
+        this.view.updateTimer(60);
+        
+        // Restart timer
+        this.decreaseTimer();
+    }
+
     animate() {
         window.requestAnimationFrame(() => this.animate());
         this.view.clear();
@@ -180,11 +213,21 @@ export class GameController {
         const playerAttackFrame = this.player.sprites.attack1.attackFrame || Math.floor(this.player.sprites.attack1.framesMax / 2);
         const enemyAttackFrame = this.enemy.sprites.attack1.attackFrame || Math.floor(this.enemy.sprites.attack1.framesMax / 2);
         
+        // Debug player attack
+        if (this.player.isAttacking) {
+            const collision = rectangularCollision({ rectangle1: this.player, rectangle2: this.enemy });
+            console.log(`Player attacking - frame: ${this.player.framesCurrent}/${playerAttackFrame}`);
+            console.log(`  Player attackBox: x=${this.player.attackBox.position.x.toFixed(0)}, y=${this.player.attackBox.position.y.toFixed(0)}, w=${this.player.attackBox.width}, h=${this.player.attackBox.height}`);
+            console.log(`  Enemy hitbox: x=${this.enemy.position.x.toFixed(0)}, y=${this.enemy.position.y.toFixed(0)}, w=${this.enemy.width}, h=${this.enemy.height}`);
+            console.log(`  Collision: ${collision}`);
+        }
+        
         if (
             rectangularCollision({ rectangle1: this.player, rectangle2: this.enemy }) &&
             this.player.isAttacking &&
             this.player.framesCurrent === playerAttackFrame
         ) {
+            console.log('Player HIT successful!');
             this.player.isAttacking = false;
             this.enemy.health -= this.player.attackDamage;
             this.enemy.switchSprite('takeHit');
@@ -196,11 +239,17 @@ export class GameController {
             this.player.isAttacking = false;
         }
 
+        // Debug enemy attack
+        if (this.enemy.isAttacking) {
+            console.log(`Enemy attacking - frame: ${this.enemy.framesCurrent}, attackFrame: ${enemyAttackFrame}, collision: ${rectangularCollision({ rectangle1: this.enemy, rectangle2: this.player })}`);
+        }
+        
         if (
             rectangularCollision({ rectangle1: this.enemy, rectangle2: this.player }) &&
             this.enemy.isAttacking &&
             this.enemy.framesCurrent === enemyAttackFrame
         ) {
+            console.log('Enemy HIT successful!');
             this.enemy.isAttacking = false;
             this.player.health -= this.enemy.attackDamage;
             this.player.switchSprite('takeHit');
@@ -213,7 +262,7 @@ export class GameController {
         }
 
         // End Game
-        if (this.player.health <= 0 || this.enemy.health <= 0) {
+        if (!this.gameOver && (this.player.health <= 0 || this.enemy.health <= 0)) {
             this.determineWinner();
             this.player.dead = true;
             this.enemy.dead = true;

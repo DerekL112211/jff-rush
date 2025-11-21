@@ -100,6 +100,35 @@ canvas {
     text-align: center;
 }
 
+#restart-button {
+    position: absolute;
+    top: 60%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 15px 40px;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    background-color: #818cf8;
+    border: 3px solid white;
+    border-radius: 10px;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 0 #5b21b6;
+}
+
+#restart-button:hover {
+    background-color: #6366f1;
+    transform: translate(-50%, -55%);
+    box-shadow: 0 6px 0 #5b21b6;
+}
+
+#restart-button:active {
+    transform: translate(-50%, -50%);
+    box-shadow: 0 2px 0 #5b21b6;
+}
+
 .instructions {
     position: absolute;
     bottom: 10px;

@@ -29,5 +29,11 @@ export class GameView {
     showResult(text) {
         document.querySelector('#result-display').style.display = 'block';
         document.querySelector('#result-display').innerHTML = text;
+        document.querySelector('#restart-button').style.display = 'block';
+    }
+
+    hideResult() {
+        document.querySelector('#result-display').style.display = 'none';
+        document.querySelector('#restart-button').style.display = 'none';
     }
 }

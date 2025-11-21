@@ -1,11 +1,16 @@
-// Ryu - Balanced fighter
+// Chun-Li - Fastest fighter with highest jump but lowest damage
 export default {
-    name: 'Ryu',
+    name: 'G-Li',
     scale: 0.4,
     offset: { x: 0, y: 0 },
-    jumpVelocity: -15,
-    moveSpeed: 5,
-    attackDamage: 10,
+    jumpVelocity: -13,  // Highest jump
+    moveSpeed: 7,       // Fastest movement
+    attackDamage: 7,    // Lowest damage
+    attackBox: {
+        offset: { x: 0, y: 0 },
+        width: 100,
+        height: 50
+    },
     sprites: {
         idle: {
             imageSrc: './sprite/p1/idle.png',
@@ -26,16 +31,17 @@ export default {
             loop: false
         },
         attack1: {
-            imageSrc: './sprite/p1/idle.png',
+            imageSrc: './sprite/p1/attack.png',
             framesMax: 4,
-            attackFrame: 3
+            attackFrame: 2,
+            loop: false  // Don't loop attack animation
         },
         takeHit: {
-            imageSrc: './sprite/p1/idle.png',
+            imageSrc: './sprite/p1/takehit.png',
             framesMax: 4
         },
         death: {
-            imageSrc: './sprite/p1/idle.png',
+            imageSrc: './sprite/p1/death.png',
             framesMax: 4
         }
     }

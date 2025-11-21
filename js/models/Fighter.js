@@ -17,6 +17,8 @@ export class Fighter extends Sprite {
         attackDamage = 10,   // Default attack damage
         name = 'Fighter'     // Character name
     }) {
+        console.log('Fighter constructor - position:', position);
+        
         super({
             position,
             imageSrc: imageSrc || (sprites && sprites.idle ? sprites.idle.imageSrc : null),
@@ -33,15 +35,25 @@ export class Fighter extends Sprite {
         this.height = 150;
         
         this.lastKey;
+        
+        console.log('Fighter constructor - position param:', position);
+        console.log('Fighter constructor - this.position:', this.position);
+        console.log('Fighter constructor - attackBox param:', attackBox);
+        
+        // Ensure we have valid position values
+        const validPosition = position || this.position || { x: 0, y: 0 };
+        
         this.attackBox = {
             position: {
-                x: this.position.x,
-                y: this.position.y
+                x: validPosition.x,
+                y: validPosition.y
             },
             offset: attackBox.offset || { x: 0, y: 0 },
             width: attackBox.width || 100,
             height: attackBox.height || 50
         };
+        
+        console.log('AttackBox initialized:', this.attackBox);
         this.color = color;
         this.isAttacking = false;
         this.health = 100;
@@ -98,11 +110,11 @@ export class Fighter extends Sprite {
     }
 
     attack() {
+        console.log(`${this.name} attack triggered! isAttacking: ${this.isAttacking}`);
         this.switchSprite('attack1');
         this.isAttacking = true;
-        setTimeout(() => {
-            this.isAttacking = false;
-        }, 100);
+        // Don't use timeout - let the collision detection handle resetting isAttacking
+        // The attack stays active until it hits or the animation completes
     }
 
     switchSprite(sprite) {
