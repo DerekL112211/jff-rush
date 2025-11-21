@@ -1,0 +1,27 @@
+import { GameView } from './views/GameView.js';
+import { GameController } from './controllers/GameController.js';
+import { AudioManager } from './utils/AudioManager.js';
+import { getCharacter } from './config/characters.js';
+
+// Get character selections from URL parameters or use defaults
+const urlParams = new URLSearchParams(window.location.search);
+const player1Character = urlParams.get('p1') || 'gli';
+const player2Character = urlParams.get('p2') || 'gli';
+
+console.log(`Starting game: P1=${player1Character}, P2=${player2Character}`);
+
+// Set character icons
+const p1Config = getCharacter(player1Character);
+const p2Config = getCharacter(player2Character);
+document.getElementById('player-icon').src = p1Config.iconSrc || './sprite/p1/icon.jpg';
+document.getElementById('enemy-icon').src = p2Config.iconSrc || './sprite/p1/icon.jpg';
+
+// Initialize audio manager
+const audioManager = new AudioManager();
+
+const view = new GameView('gameCanvas');
+const controller = new GameController(view, {
+    player1Character: player1Character,
+    player2Character: player2Character,
+    audioManager: audioManager
+});

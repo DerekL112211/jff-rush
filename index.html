@@ -12,23 +12,42 @@
         <!-- UI 層 -->
         <div id="ui-layer">
             <div class="top-bar">
-                <div class="health-bar-container">
-                    <div id="player-health" class="health-bar"></div>
+                <div class="player-info">
+                    <img id="player-icon" class="character-icon" src="./sprite/p1/icon.jpg" alt="P1">
+                    <div class="health-bar-container">
+                        <div id="player-health" class="health-bar"></div>
+                    </div>
                 </div>
                 <div id="timer">60</div>
-                <div class="health-bar-container">
-                    <div id="enemy-health" class="health-bar"></div>
+                <div class="player-info">
+                    <div class="health-bar-container">
+                        <div id="enemy-health" class="health-bar"></div>
+                    </div>
+                    <img id="enemy-icon" class="character-icon" src="./sprite/p1/icon.jpg" alt="P2">
                 </div>
             </div>
-            <div id="result-display">K.O.</div>
+            <div id="result-display" style="padding-bottom: 20px;">K.O.</div>
             <button id="restart-button" style="display: none;">重新開始</button>
+            
+            <!-- Audio Controls -->
+            <div class="audio-controls">
+                <button id="toggle-music">🔊 音樂</button>
+                <input type="range" id="volume-slider" min="0" max="100" value="30">
+                <span id="volume-display">30%</span>
+            </div>
+            
             <div class="instructions">
-                P1 (左): A/D移動, W跳躍, 空白鍵攻擊 <br>
-                P2 (右): 方向鍵移動, ↑跳躍, Enter攻擊
+                P1 (左): A/D移動, W跳躍, S防禦, 空白鍵攻擊 <br>
+                P2 (右): 方向鍵移動, ↑跳躍, ↓防禦, Enter攻擊
             </div>
         </div>
         
         <canvas id="gameCanvas"></canvas>
+        
+        <!-- Background Music -->
+        <audio id="bgm" loop>
+            <source src="music/bgm.mp3" type="audio/mpeg">
+        </audio>
     </div>
 
     <script type="module" src="js/main.js"></script>

@@ -1,5 +1,5 @@
 export class Sprite {
-    constructor({ position, imageSrc, scale = 1, framesMax = 1, offset = {x: 0, y: 0}, sprites, isPlayer = true }) {
+    constructor({ position, imageSrc, scale = 1, framesMax = 1, offset = {x: 0, y: 0}, sprites, isPlayer = true, framesHold = 5 }) {
         this.position = position;
         this.width = 50;
         this.height = 150;
@@ -9,7 +9,7 @@ export class Sprite {
         this.framesMax = framesMax;
         this.framesCurrent = 0;
         this.framesElapsed = 0;
-        this.framesHold = 5;
+        this.framesHold = framesHold; // Default frame hold, can be overridden per sprite
         this.offset = offset;
         this.isPlayer = isPlayer;
         this.fixedFrameWidth = null;

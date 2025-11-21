@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自動計算 Hitbox</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            transition: transform 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .results {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .results h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .code-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+
+        .log {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 13px;
+            border: 1px solid #ddd;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-success {
+            color: #28a745;
+        }
+
+        .log-error {
+            color: #dc3545;
+        }
+
+        .log-info {
+            color: #17a2b8;
+        }
+
+        .progress {
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            height: 30px;
+            background: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 自動計算 Hitbox</h1>
+        <p class="subtitle">自動分析角色的所有精靈圖並計算最佳 Hitbox</p>
+
+        <div class="control-group">
+            <label for="alphaThreshold">透明度閾值 (Alpha Threshold): <span id="alphaValue">50</span></label>
+            <input type="range" id="alphaThreshold" min="0" max="255" value="50" style="width: 100%;">
+            <small style="color: #666;">調整此值來控制什麼程度的透明被視為「透明」</small>
+        </div>
+
+        <button id="analyzeBtn">🚀 開始自動分析 G-Li 角色</button>
+
+        <div class="progress" id="progressContainer" style="display: none;">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%;">0%</div>
+            </div>
+        </div>
+
+        <div class="results" id="resultsContainer" style="display: none;">
+            <h2>📊 分析結果</h2>
+            <div class="log" id="logContainer"></div>
+            
+            <h3 style="margin-top: 20px; margin-bottom: 10px;">📝 更新後的配置代碼</h3>
+            <div class="code-output" id="codeOutput"></div>
+            
+            <button id="copyBtn" style="margin-top: 10px;">📋 複製配置代碼</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { HitboxDetector } from './js/utils/HitboxDetector.js';
+
+        const alphaThreshold = document.getElementById('alphaThreshold');
+        const alphaValue = document.getElementById('alphaValue');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const logContainer = document.getElementById('logContainer');
+        const codeOutput = document.getElementById('codeOutput');
+        const copyBtn = document.getElementById('copyBtn');
+
+        alphaThreshold.addEventListener('input', (e) => {
+            alphaValue.textContent = e.target.value;
+        });
+
+        function addLog(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function updateProgress(current, total) {
+            const percent = Math.round((current / total) * 100);
+            progressFill.style.width = percent + '%';
+            progressFill.textContent = percent + '%';
+        }
+
+        analyzeBtn.addEventListener('click', async () => {
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = '⏳ 分析中...';
+            progressContainer.style.display = 'block';
+            resultsContainer.style.display = 'block';
+            logContainer.innerHTML = '';
+
+            try {
+                const threshold = parseInt(alphaThreshold.value);
+                
+                // G-Li 角色配置
+                const characterConfig = {
+                    name: 'G-Li',
+                    scale: 0.4,
+                    sprites: {
+                        idle: { imageSrc: './sprite/p1/idle.png', framesMax: 4 },
+                        run: { imageSrc: './sprite/p1/run.png', framesMax: 4 },
+                        jump: { imageSrc: './sprite/p1/jump.png', framesMax: 4 },
+                        fall: { imageSrc: './sprite/p1/fall.png', framesMax: 4 },
+                        attack1: { imageSrc: './sprite/p1/attack.png', framesMax: 4 },
+                        takeHit: { imageSrc: './sprite/p1/takehit.png', framesMax: 4 },
+                        death: { imageSrc: './sprite/p1/death.png', framesMax: 4 },
+                        block: { imageSrc: './sprite/p1/defend.png', framesMax: 4 }
+                    }
+                };
+
+                addLog('開始分析 G-Li 角色...', 'info');
+                
+                const sprites = Object.keys(characterConfig.sprites);
+                const results = {};
+                
+                for (let i = 0; i < sprites.length; i++) {
+                    const spriteName = sprites[i];
+                    const spriteConfig = characterConfig.sprites[spriteName];
+                    
+                    addLog(`正在分析 ${spriteName} (${spriteConfig.framesMax} 幀)...`, 'info');
+                    updateProgress(i, sprites.length);
+                    
+                    try {
+                        const hitbox = await HitboxDetector.detectFromUrl(
+                            spriteConfig.imageSrc, 
+                            spriteConfig.framesMax, 
+                            threshold
+                        );
+                        
+                        // 應用縮放
+                        const scaled = {
+                            offset: {
+                                x: Math.round(hitbox.offset.x * characterConfig.scale),
+                                y: Math.round(hitbox.offset.y * characterConfig.scale)
+                            },
+                            width: Math.round(hitbox.width * characterConfig.scale),
+                            height: Math.round(hitbox.height * characterConfig.scale),
+                            original: hitbox
+                        };
+                        
+                        results[spriteName] = scaled;
+                        addLog(`✓ ${spriteName}: offset(${scaled.offset.x}, ${scaled.offset.y}), size(${scaled.width}x${scaled.height})`, 'success');
+                    } catch (error) {
+                        addLog(`✗ ${spriteName} 分析失敗: ${error.message}`, 'error');
+                        results[spriteName] = null;
+                    }
+                }
+                
+                updateProgress(sprites.length, sprites.length);
+                
+                // 計算平均 hitbox（用於基本動作）
+                const validResults = [results.idle, results.run].filter(r => r !== null);
+                let avgHitbox = null;
+                
+                if (validResults.length > 0) {
+                    avgHitbox = {
+                        offset: { x: 0, y: 0 },
+                        width: 0,
+                        height: 0
+                    };
+                    
+                    validResults.forEach(r => {
+                        avgHitbox.offset.x += r.offset.x;
+                        avgHitbox.offset.y += r.offset.y;
+                        avgHitbox.width += r.width;
+                        avgHitbox.height += r.height;
+                    });
+                    
+                    avgHitbox.offset.x = Math.round(avgHitbox.offset.x / validResults.length);
+                    avgHitbox.offset.y = Math.round(avgHitbox.offset.y / validResults.length);
+                    avgHitbox.width = Math.round(avgHitbox.width / validResults.length);
+                    avgHitbox.height = Math.round(avgHitbox.height / validResults.length);
+                    
+                    addLog(`\n📊 建議使用的 Hitbox (idle/run 平均值):`, 'info');
+                    addLog(`   offset: { x: ${avgHitbox.offset.x}, y: ${avgHitbox.offset.y} }`, 'info');
+                    addLog(`   width: ${avgHitbox.width}, height: ${avgHitbox.height}`, 'info');
+                }
+                
+                // 生成配置代碼
+                const code = generateConfigCode(avgHitbox, results);
+                codeOutput.textContent = code;
+                
+                addLog('\n✅ 分析完成！請複製配置代碼並更新 gli.js', 'success');
+                
+                analyzeBtn.textContent = '✅ 分析完成';
+            } catch (error) {
+                addLog(`❌ 發生錯誤: ${error.message}`, 'error');
+                analyzeBtn.textContent = '❌ 分析失敗';
+                console.error(error);
+            } finally {
+                setTimeout(() => {
+                    analyzeBtn.disabled = false;
+                    analyzeBtn.textContent = '🚀 開始自動分析 G-Li 角色';
+                }, 2000);
+            }
+        });
+
+        function generateConfigCode(avgHitbox, results) {
+            if (!avgHitbox) return '// 分析失敗，無法生成配置';
+            
+            return `// G-Li - Auto-generated hitbox configuration
+export default {
+    name: 'G-Li',
+    iconSrc: './sprite/p1/icon.jpg',
+    scale: 0.4,
+    offset: { x: 0, y: 0 },
+    jumpVelocity: -12,
+    moveSpeed: 4,
+    attackDamage: 7,
+    blockReduction: 0.9,
+    
+    // 默認 Hitbox (基於 idle/run 平均值，用於沒有特定hitbox的動作)
+    hitbox: {
+        offset: { x: ${avgHitbox.offset.x}, y: ${avgHitbox.offset.y} },
+        width: ${avgHitbox.width},
+        height: ${avgHitbox.height}
+    },
+    
+    // Attack box (保持原有設定或手動調整)
+    attackBox: {
+        offset: { x: 0, y: 50 },
+        width: 120,
+        height: 80
+    },
+    
+    sprites: {
+        idle: {
+            imageSrc: './sprite/p1/idle.png',
+            framesMax: 4,
+            framesHold: 20,
+            hitbox: { offset: { x: ${results.idle.offset.x}, y: ${results.idle.offset.y} }, width: ${results.idle.width}, height: ${results.idle.height} }
+        },
+        run: {
+            imageSrc: './sprite/p1/run.png',
+            framesMax: 4,
+            framesHold: 20,
+            hitbox: { offset: { x: ${results.run.offset.x}, y: ${results.run.offset.y} }, width: ${results.run.width}, height: ${results.run.height} }
+        },
+        jump: {
+            imageSrc: './sprite/p1/jump.png',
+            framesMax: 4,
+            framesHold: 30,
+            loop: false,
+            hitbox: { offset: { x: ${results.jump.offset.x}, y: ${results.jump.offset.y} }, width: ${results.jump.width}, height: ${results.jump.height} }
+        },
+        fall: {
+            imageSrc: './sprite/p1/fall.png',
+            framesMax: 4,
+            framesHold: 30,
+            loop: false,
+            hitbox: { offset: { x: ${results.fall.offset.x}, y: ${results.fall.offset.y} }, width: ${results.fall.width}, height: ${results.fall.height} }
+        },
+        attack1: {
+            imageSrc: './sprite/p1/attack.png',
+            framesMax: 4,
+            framesHold: 8,
+            attackFrame: 2,
+            loop: false,
+            hitbox: { offset: { x: ${results.attack1.offset.x}, y: ${results.attack1.offset.y} }, width: ${results.attack1.width}, height: ${results.attack1.height} }
+        },
+        takeHit: {
+            imageSrc: './sprite/p1/takehit.png',
+            framesMax: 4,
+            framesHold: 17,
+            hitbox: { offset: { x: ${results.takeHit.offset.x}, y: ${results.takeHit.offset.y} }, width: ${results.takeHit.width}, height: ${results.takeHit.height} }
+        },
+        death: {
+            imageSrc: './sprite/p1/death.png',
+            framesMax: 4,
+            framesHold: 8,
+            loop: false,
+            hitbox: { offset: { x: ${results.death.offset.x}, y: ${results.death.offset.y} }, width: ${results.death.width}, height: ${results.death.height} }
+        },
+        block: {
+            imageSrc: './sprite/p1/defend.png',
+            framesMax: 4,
+            framesHold: 10,
+            hitbox: { offset: { x: ${results.block.offset.x}, y: ${results.block.offset.y} }, width: ${results.block.width}, height: ${results.block.height} }
+        }
+    }
+};
+
+/*
+每個動作的 Hitbox 說明：
+${Object.entries(results).map(([name, data]) => {
+    if (!data) return `${name}: 分析失敗`;
+    return `${name}: offset(${data.offset.x}, ${data.offset.y}), size(${data.width}x${data.height})`;
+}).join('\n')}
+*/`;
+        }
+
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(codeOutput.textContent).then(() => {
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = '✅ 已複製！';
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -4,6 +4,14 @@ export class GameView {
         this.c = this.canvas.getContext('2d');
         this.canvas.width = 1024;
         this.canvas.height = 576;
+        
+        // Load background image
+        this.backgroundImage = new Image();
+        this.backgroundImage.src = './bg.jpg';
+        this.backgroundLoaded = false;
+        this.backgroundImage.onload = () => {
+            this.backgroundLoaded = true;
+        };
     }
 
     clear() {
@@ -11,10 +19,21 @@ export class GameView {
     }
 
     drawBackground() {
-        this.c.fillStyle = '#87CEEB';
-        this.c.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.c.fillStyle = '#505050';
-        this.c.fillRect(0, this.canvas.height - 96, this.canvas.width, 96);
+        if (this.backgroundLoaded) {
+            // Draw the background image to fill the entire canvas
+            this.c.drawImage(
+                this.backgroundImage, 
+                0, 0, 
+                this.canvas.width, 
+                this.canvas.height
+            );
+        } else {
+            // Fallback to solid colors if image not loaded
+            this.c.fillStyle = '#87CEEB';
+            this.c.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.c.fillStyle = '#505050';
+            this.c.fillRect(0, this.canvas.height - 96, this.canvas.width, 96);
+        }
     }
 
     updateHealth(playerHealth, enemyHealth) {
